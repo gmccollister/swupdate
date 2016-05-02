@@ -25,6 +25,8 @@
 #include "swupdate.h"
 #include "swupdate_status.h"
 
+extern int dry_run;
+
 extern int loglevel;
 
 typedef enum {

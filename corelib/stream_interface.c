@@ -317,7 +317,7 @@ void *network_initializer(void *data)
 		close(inst.fd);
 
 		/* do carry out the installation (flash programming) */
-		if (ret == 0) {
+		if (!dry_run && ret == 0) {
 			TRACE("Valid image found: copying to FLASH");
 
 			/*
@@ -342,9 +342,12 @@ void *network_initializer(void *data)
 				notify(SUCCESS, RECOVERY_NO_ERROR, "SWUPDATE successful !");
 				inst.last_install = SUCCESS;
 			}
-		} else {
+		} else if (ret != 0) {
 			inst.last_install = FAILURE;
 			notify(FAILURE, RECOVERY_ERROR, "Image invalid or corrupted. Not installing ...");
+		} else {
+			notify(SUCCESS, RECOVERY_NO_ERROR, "SWUPDATE dry-run successful !");
+			inst.last_install = SUCCESS;
 		}
 		pthread_mutex_lock(&stream_mutex);
 		inst.status = IDLE;

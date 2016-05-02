@@ -38,6 +38,8 @@
 #ifdef CONFIG_UBOOT
 int fw_set_one_env (const char *name, const char *value)
 {
+	if (dry_run)
+		return 0;
 
 	if (fw_env_open ()) {
 		fprintf (stderr, "Error: environment not initialized\n");

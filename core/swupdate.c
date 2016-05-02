@@ -74,7 +74,10 @@ struct flash_description *get_flash_info(void) {
 }
 #endif
 
+int dry_run = 0;
+
 static struct option long_options[] = {
+	{"dry-run", no_argument, &dry_run, 1},
 	{"verbose", no_argument, NULL, 'v'},
 	{"image", required_argument, NULL, 'i'},
 	{"loglevel", required_argument, NULL, 'l'},
@@ -122,6 +125,7 @@ static void usage(char *programname)
 		"                                  Ex.: stable,main\n"
 		" -i, --image <filename>         : Software to be installed\n"
 		" -l, --loglevel <level>         : logging level\n"
+		"     --dry-run                  : Don't run scripts or install images\n"
 #ifdef CONFIG_SIGNED_IMAGES
 		" -k  --key <public key file>    : file with public key to verify images\n"
 #endif
@@ -308,8 +312,11 @@ static int install_from_file(char *fname)
 		mtd_cleanup();
 		scan_mtd_devices();
 #endif
-	/* copy images */
-	ret = install_images(&swcfg, fdsw, 1);
+	if (!dry_run) {
+		/* copy images */
+		ret = install_images(&swcfg, fdsw, 1);
+	} else
+		ret = 0;
 
 	close(fdsw);
 
@@ -318,8 +325,12 @@ static int install_from_file(char *fname)
 		exit(1);
 	}
 
-	fprintf(stdout, "Software updated successfully\n");
-	fprintf(stdout, "Please reboot the device to start the new software\n");
+	if (dry_run) {
+		fprintf(stdout, "Dry-run completed successfully\n");
+	} else {
+		fprintf(stdout, "Software updated successfully\n");
+		fprintf(stdout, "Please reboot the device to start the new software\n");
+	}
 
 	return 0;
 }
@@ -432,6 +443,8 @@ int main(int argc, char **argv)
 	while ((c = getopt_long(argc, argv, main_options,
 				long_options, NULL)) != EOF) {
 		switch (c) {
+		case 0:
+			break;
 		case 'v':
 			loglevel = TRACELEVEL;
 			break;
@@ -510,6 +523,9 @@ int main(int argc, char **argv)
 			exit(1);
 		}
 	}
+
+	if (dry_run)
+		printf("Starting dry-run\n");
 
 	lua_handlers_init();
 	if(!get_hw_revision(&swcfg.hw))
